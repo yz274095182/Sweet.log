@@ -1,12 +1,51 @@
-# 云开发 quickstart
+# Sweet.log
 
-这是云开发的快速启动指引，其中演示了如何上手使用云开发的三大基础能力：
+**不是吃货，是血糖在作怪。**
 
-- 数据库：一个既可在小程序前端操作，也能在云函数中读写的 JSON 文档型数据库
-- 文件存储：在小程序前端直接上传/下载云端文件，在云开发控制台可视化管理
-- 云函数：在云端运行的代码，微信私有协议天然鉴权，开发者只需编写业务逻辑代码
+一个专属于你的控糖小助手，记录血糖、记录生活、记录那些「只是一小块蛋糕」背后的故事。
 
-## 参考文档
+---
 
-- [云开发文档](https://developers.weixin.qq.com/miniprogram/dev/wxcloud/basis/getting-started.html)
+## 技术栈
 
+```
+🍰 uni-app        跨平台框架（小程序 + App + H5）
+🧁 TypeScript     前端必用
+🍩 TailwindCSS   样式不要太甜
+🍨 Pinia          状态管理，比奶茶还顺滑
+🍫 Vitest         测试框架，保证代码不翻车
+🍪 ESLint + Prettier  代码规范，我们很严格
+```
+
+## 开发命令
+
+```bash
+pnpm dev:mp-weixin   # 微信小程序开发
+pnpm build:mp-weixin # 小程序构建
+pnpm dev:app         # App 开发
+pnpm test            # 运行测试
+pnpm test:watch      # 监听模式
+```
+
+## 目录结构
+
+```
+src/
+├── pages/          # 页面们（都在这里开会）
+├── store/          # Pinia 状态（比冰箱还冷静）
+├── utils/          # 工具函数（瑞士军刀）
+└── static/         # 静态资源（图片、视频、灵魂）
+
+cloudfunctions/     # 云函数（在后厨默默干活）
+dist/              # 构建产物（最终形态）
+```
+
+## 关于血糖
+
+正常范围空腹 3.9~6.1 mmol/L，餐后 < 7.8 mmol/L。
+
+但你知道吗？每次偷吃一口蛋糕，血糖就在偷偷记录。
+
+---
+
+_让控糖不再枯燥，让数据变得温暖。_
