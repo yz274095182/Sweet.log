@@ -1,0 +1,63 @@
+import type { GlucoseStatus } from './constants'
+
+// 情绪反馈文案
+const EMOTION_MESSAGES: Record<GlucoseStatus, string[]> = {
+  normal: [
+    '太棒啦！今天的糖分控制得很完美哦～ 🥰',
+    '稳稳的幸福！宝宝/身体给你点了一个大大的赞！ 👍',
+    '闯关成功！数值很漂亮，继续保持～ 🌟'
+  ],
+  high: [
+    '稍微有一点点超标哦，不要有压力，下一顿我们吃清淡点～ 🫂',
+    '只是一次小小波动，说明不了什么，下个时段我们再战！ 💪',
+    '警报拉响一点点～复盘一下刚才的饮食，下次避开那个"升糖刺客"！ 🥷'
+  ],
+  low: [
+    '【警告】数值偏低！如果觉得头晕心慌，请立刻吃一颗糖或喝点果汁！ ❗',
+    '低血糖啦！这比高血糖更危险，快去吃点含有碳水的小零食垫一垫。 🍞'
+  ]
+}
+
+// 首页问候语
+const GREETING_MESSAGES: string[] = [
+  '今天心情美丽吗？放轻松～ 😊',
+  '深呼吸，你已经做得很棒啦！ 💪',
+  '不要太焦虑，平稳的心态比数值更重要。 🫂',
+  '慢一点没关系，我们一步一步来。 ⏳',
+  '把焦虑交给我，把好心情留给自己。 🤗',
+  '又是用心照顾自己的一天呢。 💖',
+  '每一次记录，都是爱自己的最好证明。 ❤️',
+  '不论今天数据如何，你都很了不起。 🌟',
+  '坚持打卡，给自己的自律点个大大的赞！ 👍',
+  '稳住，我们能赢！今天也是控糖小能手。 🏆',
+  '今天也要好好吃饭，好好开心哦。 🍽️',
+  '辛苦啦，忙完记得喝杯温水休息一下。 ☕',
+  '今天身体有没有乖乖听话呀？ 😊',
+  '准备好迎接今天的甜蜜打卡了吗？ 🍬',
+  '给自己一个微笑，今天也要元气满满！ ⚡'
+]
+
+// 获取随机情绪文案
+export function getRandomEmotionMessage(status: GlucoseStatus): string {
+  const messages = EMOTION_MESSAGES[status]
+  const randomIndex = Math.floor(Math.random() * messages.length)
+  return messages[randomIndex]
+}
+
+// 获取随机问候语
+export function getRandomGreeting(): string {
+  const randomIndex = Math.floor(Math.random() * GREETING_MESSAGES.length)
+  return GREETING_MESSAGES[randomIndex]
+}
+
+// 获取状态对应的 Emoji
+export function getStatusEmoji(status: GlucoseStatus): string {
+  switch (status) {
+    case 'normal':
+      return '🟢'
+    case 'high':
+      return '🔴'
+    case 'low':
+      return '🔵'
+  }
+}

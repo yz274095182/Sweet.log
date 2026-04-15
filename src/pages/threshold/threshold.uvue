@@ -1,0 +1,386 @@
+<template>
+  <view class="page-container">
+    <!-- 提示信息 -->
+    <view class="notice-card">
+      <text class="notice-icon">⚠️</text>
+      <text class="notice-text">系统标准仅供参考，请优先遵从主治医生建议进行调整。</text>
+    </view>
+
+    <!-- 阈值设置列表 -->
+    <view class="threshold-card">
+      <view class="threshold-header">
+        <text class="threshold-title">各时段警戒线设置</text>
+        <text class="threshold-subtitle">单位：mmol/L</text>
+      </view>
+
+      <view class="threshold-list">
+        <view v-for="tag in timeTags" :key="tag" class="threshold-item">
+          <view class="threshold-item-header">
+            <text class="threshold-item-icon">{{ getTagIcon(tag) }}</text>
+            <text class="threshold-item-name">{{ tag }}</text>
+          </view>
+          <view class="threshold-inputs">
+            <view class="threshold-input-group">
+              <text class="threshold-input-label">最低</text>
+              <input
+                class="threshold-input"
+                type="digit"
+                :value="thresholds[tag].min.toString()"
+                @input="(e: any) => onMinChange(tag, e.detail.value)"
+              />
+            </view>
+            <text class="threshold-divider">-</text>
+            <view class="threshold-input-group">
+              <text class="threshold-input-label">最高</text>
+              <input
+                class="threshold-input"
+                type="digit"
+                :value="thresholds[tag].max.toString()"
+                @input="(e: any) => onMaxChange(tag, e.detail.value)"
+              />
+            </view>
+          </view>
+          <view class="threshold-default">
+            <text class="threshold-default-text">系统默认：{{ defaultThresholds[tag].min }} - {{ defaultThresholds[tag].max }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 保存按钮 -->
+    <button class="save-btn" @click="saveThresholds" :disabled="isSaving">
+      <text v-if="!isSaving" class="save-btn-text">保存设置</text>
+      <text v-else class="save-btn-text">保存中...</text>
+    </button>
+
+    <!-- 重置按钮 -->
+    <button class="reset-btn" @click="resetToDefault">
+      <text class="reset-btn-text">恢复系统默认</text>
+    </button>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, onMounted } from 'vue'
+import { useUserStore } from '@/store/user'
+import { TIME_TAGS, TIME_TAG_ICONS, GDM_THRESHOLDS, NORMAL_THRESHOLDS, type TimeTag } from '@/utils/constants'
+
+const userStore = useUserStore()
+
+// 状态
+const isSaving = ref(false)
+const timeTags = TIME_TAGS
+const defaultThresholds = GDM_THRESHOLDS
+
+// 阈值数据
+const thresholds = ref<Record<TimeTag, { min: number; max: number }>>({} as any)
+
+// 获取时段图标
+function getTagIcon(tag: TimeTag): string {
+  return TIME_TAG_ICONS[tag]
+}
+
+// 初始化阈值
+onMounted(() => {
+  const config = userStore.userInfo?.thresholdConfig
+  if (config) {
+    // 从用户配置读取
+    for (const tag of timeTags) {
+      thresholds.value[tag] = config[tag] || {
+        min: defaultThresholds[tag].min,
+        max: defaultThresholds[tag].max
+      }
+    }
+  } else {
+    // 使用系统默认
+    for (const tag of timeTags) {
+      thresholds.value[tag] = {
+        min: defaultThresholds[tag].min,
+        max: defaultThresholds[tag].max
+      }
+    }
+  }
+
+  // 同步到默认阈值（根据用户类型）
+  if (userStore.getDiabetesType() === 'NORMAL') {
+    for (const tag of timeTags) {
+      thresholds.value[tag] = {
+        min: NORMAL_THRESHOLDS[tag].min,
+        max: NORMAL_THRESHOLDS[tag].max
+      }
+    }
+  }
+})
+
+// 最低值变化
+function onMinChange(tag: TimeTag, value: string) {
+  const num = parseFloat(value)
+  if (!isNaN(num) && num >= 0 && num < thresholds.value[tag].max) {
+    thresholds.value[tag].min = num
+  }
+}
+
+// 最高值变化
+function onMaxChange(tag: TimeTag, value: string) {
+  const num = parseFloat(value)
+  if (!isNaN(num) && num > thresholds.value[tag].min && num <= 30) {
+    thresholds.value[tag].max = num
+  }
+}
+
+// 保存设置
+async function saveThresholds() {
+  if (isSaving.value) return
+
+  // 验证
+  for (const tag of timeTags) {
+    if (thresholds.value[tag].min >= thresholds.value[tag].max) {
+      uni.showToast({
+        title: `${tag}的最低值必须小于最高值`,
+        icon: 'none'
+      })
+      return
+    }
+  }
+
+  isSaving.value = true
+
+  try {
+    // 逐个更新
+    for (const tag of timeTags) {
+      await userStore.updateThresholdConfig(
+        tag,
+        thresholds.value[tag].min,
+        thresholds.value[tag].max
+      )
+    }
+
+    uni.showToast({
+      title: '保存成功',
+      icon: 'success'
+    })
+
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1500)
+  } catch (e: any) {
+    uni.showToast({
+      title: '保存失败，请重试',
+      icon: 'none'
+    })
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// 恢复默认
+function resetToDefault() {
+  uni.showModal({
+    title: '确认重置',
+    content: '确定要恢复系统默认设置吗？',
+    success: (res) => {
+      if (res.confirm) {
+        const defaults = userStore.getDiabetesType() === 'GDM' ? GDM_THRESHOLDS : NORMAL_THRESHOLDS
+        for (const tag of timeTags) {
+          thresholds.value[tag] = {
+            min: defaults[tag].min,
+            max: defaults[tag].max
+          }
+        }
+        uni.showToast({
+          title: '已恢复默认',
+          icon: 'success'
+        })
+      }
+    }
+  })
+}
+</script>
+
+<style lang="css">
+.page-container {
+  width: 750rpx;
+  min-height: 100vh;
+  background-color: #F8F9FA;
+  padding: 24rpx;
+}
+
+/* 提示卡片 */
+.notice-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 24rpx;
+  background-color: rgba(255, 159, 67, 0.1);
+  border-radius: 16rpx;
+}
+
+.notice-icon {
+  font-size: 32rpx;
+}
+
+.notice-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.5;
+}
+
+/* 阈值设置卡片 */
+.threshold-card {
+  margin-top: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.threshold-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.threshold-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.threshold-subtitle {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 阈值列表 */
+.threshold-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.threshold-item {
+  padding-bottom: 32rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.threshold-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.threshold-item-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.threshold-item-icon {
+  font-size: 32rpx;
+}
+
+.threshold-item-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.threshold-inputs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.threshold-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.threshold-input-label {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.threshold-input {
+  width: 100%;
+  height: 80rpx;
+  background-color: #F8F9FA;
+  border-radius: 16rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333333;
+}
+
+.threshold-divider {
+  font-size: 32rpx;
+  color: #CCCCCC;
+  margin-top: 20rpx;
+}
+
+.threshold-default {
+  margin-top: 12rpx;
+  text-align: center;
+}
+
+.threshold-default-text {
+  font-size: 22rpx;
+  color: #CCCCCC;
+}
+
+/* 保存按钮 */
+.save-btn {
+  margin-top: 40rpx;
+  width: 100%;
+  height: 100rpx;
+  background-color: #FF9F43;
+  border-radius: 50rpx;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn:active {
+  background-color: #E8892E;
+}
+
+.save-btn[disabled] {
+  background-color: #CCCCCC;
+}
+
+.save-btn-text {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+/* 重置按钮 */
+.reset-btn {
+  margin-top: 24rpx;
+  width: 100%;
+  height: 88rpx;
+  background-color: transparent;
+  border-radius: 44rpx;
+  border: 2rpx solid #E0E0E0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.reset-btn-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+</style>

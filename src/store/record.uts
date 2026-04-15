@@ -1,0 +1,278 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import type { TimeTag, GlucoseStatus, DiabetesType } from '@/utils/constants'
+import { GDM_THRESHOLDS, NORMAL_THRESHOLDS } from '@/utils/constants'
+import { getCurrentTimeTag, formatDate, getDateStr } from '@/utils/time'
+import { useUserStore } from './user'
+
+// 血糖记录接口
+export interface GlucoseRecord {
+  _id?: string
+  _openid?: string
+  dateStr: string
+  timeTag: TimeTag
+  recordTime: number
+  glucoseValue: number
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
+// 记录统计
+interface RecordStats {
+  total: number
+  normal: number
+  high: number
+  low: number
+}
+
+export const useRecordStore = defineStore('record', () => {
+  // 状态
+  const records = ref<GlucoseRecord[]>([])
+  const isLoading = ref(false)
+  const currentTimeTag = ref<TimeTag>(getCurrentTimeTag())
+  const currentGlucoseValue = ref(5.5)
+  const currentNote = ref('')
+  const currentDate = ref(formatDate())
+
+  // 微信云开发相关
+  let db: any = null
+  let recordsCollection: any = null
+
+  // 初始化云数据库
+  function initCloudDB() {
+    if (typeof wx !== 'undefined' && wx.cloud && !db) {
+      db = wx.cloud.database()
+      recordsCollection = db.collection('records')
+    }
+  }
+
+  // 计算血糖状态
+  function calculateStatus(value: number, timeTag: TimeTag, diabetesType: DiabetesType): GlucoseStatus {
+    const thresholds = diabetesType === 'GDM' ? GDM_THRESHOLDS : NORMAL_THRESHOLDS
+    const threshold = thresholds[timeTag]
+
+    if (value < threshold.min) {
+      return 'low'
+    } else if (value > threshold.max) {
+      return 'high'
+    }
+    return 'normal'
+  }
+
+  // 获取默认值
+  function getDefaultValue(timeTag: TimeTag, diabetesType: DiabetesType): number {
+    const thresholds = diabetesType === 'GDM' ? GDM_THRESHOLDS : NORMAL_THRESHOLDS
+    return thresholds[timeTag].default
+  }
+
+  // 设置当前时段
+  function setCurrentTimeTag(tag: TimeTag) {
+    currentTimeTag.value = tag
+    const userStore = useUserStore()
+    currentGlucoseValue.value = getDefaultValue(tag, userStore.getDiabetesType())
+  }
+
+  // 设置血糖值
+  function setGlucoseValue(value: number) {
+    currentGlucoseValue.value = Math.round(value * 10) / 10
+  }
+
+  // 微调血糖值
+  function adjustGlucoseValue(delta: number) {
+    const newValue = currentGlucoseValue.value + delta
+    if (newValue >= 1.0 && newValue <= 30.0) {
+      currentGlucoseValue.value = Math.round(newValue * 10) / 10
+    }
+  }
+
+  // 设置备注
+  function setNote(note: string) {
+    currentNote.value = note
+  }
+
+  // 查询今日某时段的记录
+  async function queryTodayRecord(timeTag: TimeTag): Promise<GlucoseRecord | null> {
+    initCloudDB()
+    if (!db || !recordsCollection) return null
+
+    const userStore = useUserStore()
+    if (!userStore.userInfo) return null
+
+    try {
+      const today = formatDate()
+      const res = await recordsCollection.where({
+        _openid: userStore.userInfo.openid,
+        date_str: today,
+        time_tag: timeTag
+      }).get()
+
+      if (res.data && res.data.length > 0) {
+        return {
+          _id: res.data[0]._id,
+          _openid: res.data[0]._openid,
+          dateStr: res.data[0].date_str,
+          timeTag: res.data[0].time_tag,
+          recordTime: res.data[0].record_time,
+          glucoseValue: res.data[0].glucose_value,
+          note: res.data[0].note || '',
+          createdAt: res.data[0].created_at,
+          updatedAt: res.data[0].updated_at
+        }
+      }
+    } catch (e: any) {
+      console.error('查询记录失败', e)
+    }
+    return null
+  }
+
+  // 保存记录
+  async function saveRecord(): Promise<{ success: boolean; isUpdate: boolean; existingRecord?: GlucoseRecord }> {
+    initCloudDB()
+    if (!db || !recordsCollection) {
+      return { success: false, isUpdate: false }
+    }
+
+    const userStore = useUserStore()
+    if (!userStore.userInfo) {
+      return { success: false, isUpdate: false }
+    }
+
+    isLoading.value = true
+    try {
+      const now = Date.now()
+      const today = formatDate(new Date(now))
+
+      // 检查是否已有记录
+      const existing = await queryTodayRecord(currentTimeTag.value)
+
+      const recordData = {
+        _openid: userStore.userInfo.openid,
+        date_str: today,
+        time_tag: currentTimeTag.value,
+        record_time: now,
+        glucose_value: currentGlucoseValue.value,
+        note: currentNote.value,
+        updated_at: now
+      }
+
+      if (existing && existing._id) {
+        // 更新
+        await recordsCollection.doc(existing._id).update(recordData)
+        return { success: true, isUpdate: true, existingRecord: existing }
+      } else {
+        // 新增
+        recordData.created_at = now
+        await recordsCollection.add(recordData)
+        return { success: true, isUpdate: false }
+      }
+    } catch (e: any) {
+      console.error('保存记录失败', e)
+      return { success: false, isUpdate: false }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 获取日期范围内的记录
+  async function fetchRecords(startDate: string, endDate: string): Promise<GlucoseRecord[]> {
+    initCloudDB()
+    if (!db || !recordsCollection) return []
+
+    const userStore = useUserStore()
+    if (!userStore.userInfo) return []
+
+    isLoading.value = true
+    try {
+      const res = await recordsCollection.where({
+        _openid: userStore.userInfo.openid,
+        date_str: db.command.gte(startDate).and(db.command.lte(endDate))
+      }).orderBy('record_time', 'desc').get()
+
+      records.value = res.data.map((item: any) => ({
+        _id: item._id,
+        _openid: item._openid,
+        dateStr: item.date_str,
+        timeTag: item.time_tag as TimeTag,
+        recordTime: item.record_time,
+        glucoseValue: item.glucose_value,
+        note: item.note || '',
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+      }))
+
+      return records.value
+    } catch (e: any) {
+      console.error('获取记录失败', e)
+      return []
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 获取最近N天的记录
+  async function fetchRecentRecords(days: number = 7): Promise<GlucoseRecord[]> {
+    const endDate = formatDate()
+    const startDate = formatDate(new Date(Date.now() - days * 86400000))
+    return fetchRecords(startDate, endDate)
+  }
+
+  // 获取本月记录
+  async function fetchMonthRecords(): Promise<GlucoseRecord[]> {
+    const now = new Date()
+    const endDate = formatDate(now)
+    const startDate = formatDate(new Date(now.getFullYear(), now.getMonth(), 1))
+    return fetchRecords(startDate, endDate)
+  }
+
+  // 计算统计信息
+  const stats = computed<RecordStats>(() => {
+    const userStore = useUserStore()
+    let normal = 0
+    let high = 0
+    let low = 0
+
+    for (const record of records.value) {
+      const status = calculateStatus(record.glucoseValue, record.timeTag, userStore.getDiabetesType())
+      if (status === 'normal') normal++
+      else if (status === 'high') high++
+      else low++
+    }
+
+    return {
+      total: records.value.length,
+      normal,
+      high,
+      low
+    }
+  })
+
+  // 重置表单
+  function resetForm() {
+    currentTimeTag.value = getCurrentTimeTag()
+    const userStore = useUserStore()
+    currentGlucoseValue.value = getDefaultValue(currentTimeTag.value, userStore.getDiabetesType())
+    currentNote.value = ''
+  }
+
+  return {
+    records,
+    isLoading,
+    currentTimeTag,
+    currentGlucoseValue,
+    currentNote,
+    currentDate,
+    stats,
+    setCurrentTimeTag,
+    setGlucoseValue,
+    adjustGlucoseValue,
+    setNote,
+    queryTodayRecord,
+    saveRecord,
+    fetchRecords,
+    fetchRecentRecords,
+    fetchMonthRecords,
+    calculateStatus,
+    resetForm
+  }
+})

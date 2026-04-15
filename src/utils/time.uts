@@ -1,0 +1,79 @@
+import { TimeTag, TIME_TAG_HOURS, TIME_TAGS } from './constants'
+
+// 获取当前时段
+export function getCurrentTimeTag(): TimeTag {
+  const now = new Date()
+  const hour = now.getHours()
+
+  for (const tag of TIME_TAGS) {
+    const range = TIME_TAG_HOURS[tag]
+    if (hour >= range.start && hour < range.end) {
+      return tag
+    }
+  }
+
+  // 默认返回睡前
+  return '睡前'
+}
+
+// 格式化日期为 YYYY-MM-DD
+export function formatDate(date: Date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// 格式化时间为 HH:mm
+export function formatTime(date: Date = new Date()): string {
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+// 格式化完整日期时间
+export function formatDateTime(date: Date = new Date()): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+// 获取日期字符串
+export function getDateStr(timestamp: number): string {
+  const date = new Date(timestamp)
+  return formatDate(date)
+}
+
+// 获取相对日期描述
+export function getRelativeDateDesc(dateStr: string): string {
+  const today = formatDate()
+  const yesterday = formatDate(new Date(Date.now() - 86400000))
+
+  if (dateStr === today) {
+    return '今天'
+  } else if (dateStr === yesterday) {
+    return '昨天'
+  } else {
+    const date = new Date(dateStr)
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    return `${month}月${day}日`
+  }
+}
+
+// 获取本周开始日期
+export function getWeekStartDate(): string {
+  const now = new Date()
+  const dayOfWeek = now.getDay() || 7
+  const weekStart = new Date(now.getTime() - (dayOfWeek - 1) * 86400000)
+  return formatDate(weekStart)
+}
+
+// 获取本月开始日期
+export function getMonthStartDate(): string {
+  const now = new Date()
+  return formatDate(new Date(now.getFullYear(), now.getMonth(), 1))
+}

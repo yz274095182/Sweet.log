@@ -1,0 +1,64 @@
+{
+  "pages": [
+    {
+      "path": "pages/onboarding/onboarding",
+      "style": {
+        "navigationBarTitleText": "欢迎",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "记录血糖"
+      }
+    },
+    {
+      "path": "pages/chart/chart",
+      "style": {
+        "navigationBarTitleText": "数据统计"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/threshold/threshold",
+      "style": {
+        "navigationBarTitleText": "自定义阈值"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "控糖手记",
+    "navigationBarBackgroundColor": "#F8F9FA",
+    "backgroundColor": "#F8F9FA"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#FF9F43",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "text": "记录",
+        "pagePath": "pages/index/index"
+      },
+      {
+        "text": "统计",
+        "pagePath": "pages/chart/chart"
+      },
+      {
+        "text": "我的",
+        "pagePath": "pages/profile/profile"
+      }
+    ]
+  },
+  "easycom": {
+    "autoscan": true
+  }
+}

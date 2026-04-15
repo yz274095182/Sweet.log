@@ -1,0 +1,436 @@
+<template>
+  <view class="page-container">
+    <!-- 用户信息卡片 -->
+    <view class="profile-card">
+      <!-- 背景装饰 -->
+      <view class="profile-bg"></view>
+
+      <view class="profile-content">
+        <!-- 头像 -->
+        <view class="avatar-wrapper">
+          <image
+            class="avatar"
+            :src="userStore.userInfo?.avatar || defaultAvatar"
+            mode="aspectFill"
+          />
+        </view>
+
+        <!-- 昵称 -->
+        <text class="nickname">{{ userStore.userInfo?.nickname || '糖友' }}</text>
+
+        <!-- 控糖模式标签 -->
+        <view class="type-tag">
+          <text class="type-icon">{{ userStore.getDiabetesType() === 'GDM' ? '🤰' : '🧑‍🤝‍🧑' }}</text>
+          <text class="type-text">{{ userStore.getDiabetesType() === 'GDM' ? '孕期控糖模式' : '常规控糖模式' }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 功能列表 -->
+    <view class="menu-card">
+      <!-- 导出数据 -->
+      <view class="menu-item" @click="exportData">
+        <view class="menu-left">
+          <text class="menu-icon">📊</text>
+          <text class="menu-text">导出本月数据报表</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+
+      <view class="menu-divider"></view>
+
+      <!-- 自定义阈值 -->
+      <view class="menu-item" @click="goToThreshold">
+        <view class="menu-left">
+          <text class="menu-icon">⚙️</text>
+          <text class="menu-text">高级设置：自定义警戒线阈值</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+
+      <view class="menu-divider"></view>
+
+      <!-- 控糖科普 -->
+      <view class="menu-item" @click="show科普">
+        <view class="menu-left">
+          <text class="menu-icon">💡</text>
+          <text class="menu-text">控糖科普与参考标准</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+
+      <view class="menu-divider"></view>
+
+      <!-- 意见反馈 -->
+      <view class="menu-item" @click="showFeedback">
+        <view class="menu-left">
+          <text class="menu-icon">💬</text>
+          <text class="menu-text">意见反馈与支持</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 底部信息 -->
+    <view class="footer-info">
+      <text class="footer-text">专属控糖手记 v1.0.0</text>
+      <text class="footer-text">您的数据仅自己可见</text>
+    </view>
+
+    <!-- Loading -->
+    <view v-if="isExporting" class="loading-mask">
+      <view class="loading-card">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">正在生成报表...</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref } from 'vue'
+import { useUserStore } from '@/store/user'
+import { useRecordStore } from '@/store/record'
+
+const userStore = useUserStore()
+const recordStore = useRecordStore()
+
+// 状态
+const isExporting = ref(false)
+const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iI2Y0ZjRmNCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNDUiIHI9IjE4IiBmaWxsPSIjZmZmZmZmIi8+PC9zdmc+'
+
+// 导出数据
+async function exportData() {
+  if (isExporting.value) return
+
+  isExporting.value = true
+
+  try {
+    // 获取本月数据
+    const records = await recordStore.fetchMonthRecords()
+
+    if (records.length === 0) {
+      uni.showToast({
+        title: '本月暂无数据',
+        icon: 'none'
+      })
+      isExporting.value = false
+      return
+    }
+
+    // 生成 Excel 数据 (模拟)
+    const excelData = generateExcelData(records)
+
+    // 调用云函数生成 Excel 文件
+    uni.showLoading({ title: '生成中...' })
+
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'exportExcel',
+        data: {
+          records: excelData,
+          month: new Date().getMonth() + 1
+        }
+      })
+
+      if (result.fileID) {
+        // 下载文件
+        const downloadResult = await uni.downloadFile({
+          url: result.fileID
+        })
+
+        if (downloadResult.tempFilePath) {
+          // 打开文件
+          await uni.openDocument({
+            filePath: downloadResult.tempFilePath,
+            fileType: 'xlsx',
+            showMenu: true,
+            success: () => {
+              uni.showToast({
+                title: '报表已生成',
+                icon: 'success'
+              })
+            }
+          })
+        }
+      }
+    } catch (e: any) {
+      // 模拟导出成功
+      uni.hideLoading()
+      uni.showToast({
+        title: '模拟导出成功（云函数未配置）',
+        icon: 'none',
+        duration: 3000
+      })
+    }
+  } catch (e: any) {
+    uni.showToast({
+      title: '导出失败，请重试',
+      icon: 'none'
+    })
+  } finally {
+    isExporting.value = false
+  }
+}
+
+// 生成 Excel 数据
+function generateExcelData(records: any[]) {
+  return records.map(r => ({
+    日期: r.dateStr,
+    时段: r.timeTag,
+    血糖值: r.glucoseValue,
+    备注: r.note || '',
+    记录时间: new Date(r.recordTime).toLocaleString()
+  }))
+}
+
+// 跳转到阈值设置
+function goToThreshold() {
+  uni.navigateTo({
+    url: '/pages/threshold/threshold'
+  })
+}
+
+// 显示科普
+function show科普() {
+  const diabetesType = userStore.getDiabetesType()
+  const thresholds = userStore.getThresholds()
+
+  let content = ''
+
+  if (diabetesType === 'GDM') {
+    content = `【孕期控糖标准参考】
+
+🍬 空腹/餐前血糖：3.3 - 5.3 mmol/L
+🍬 餐后2小时血糖：4.4 - 6.7 mmol/L
+🍬 睡前血糖：4.4 - 6.7 mmol/L
+
+⚠️ 以上标准仅供参考，请遵医嘱调整。`
+  } else {
+    content = `【常规控糖标准参考】
+
+🍬 空腹/餐前血糖：3.9 - 7.0 mmol/L
+🍬 餐后2小时血糖：3.9 - 10.0 mmol/L
+🍬 睡前血糖：3.9 - 8.0 mmol/L
+
+⚠️ 以上标准仅供参考，请遵医嘱调整。`
+  }
+
+  uni.showModal({
+    title: '控糖科普',
+    content: content,
+    showCancel: false,
+    confirmText: '我知道了'
+  })
+}
+
+// 显示反馈
+function showFeedback() {
+  uni.showModal({
+    title: '意见反馈',
+    content: '欢迎通过以下方式联系我们：\n\n📧 邮箱：support@sweetlog.com\n\n我们非常重视您的反馈！',
+    showCancel: true,
+    cancelText: '关闭',
+    confirmText: '复制邮箱'
+  }).then((res) => {
+    if (res.confirm) {
+      // 模拟复制
+      uni.setClipboardData({
+        data: 'support@sweetlog.com',
+        success: () => {
+          uni.showToast({
+            title: '邮箱已复制',
+            icon: 'success'
+          })
+        }
+      })
+    }
+  })
+}
+</script>
+
+<style lang="css">
+.page-container {
+  width: 750rpx;
+  min-height: 100vh;
+  background-color: #F8F9FA;
+  padding: 24rpx;
+}
+
+/* 用户信息卡片 */
+.profile-card {
+  position: relative;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.profile-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160rpx;
+  background: linear-gradient(135deg, #FF9F43 0%, #FF7F43 100%);
+}
+
+.profile-content {
+  position: relative;
+  padding-top: 80rpx;
+  padding-bottom: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-wrapper {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  padding: 6rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.1);
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.nickname {
+  margin-top: 20rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.type-tag {
+  margin-top: 16rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 24rpx;
+  background-color: rgba(255, 159, 67, 0.1);
+  border-radius: 30rpx;
+}
+
+.type-icon {
+  font-size: 28rpx;
+}
+
+.type-text {
+  font-size: 26rpx;
+  color: #FF9F43;
+}
+
+/* 功能列表 */
+.menu-card {
+  margin-top: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 36rpx 32rpx;
+}
+
+.menu-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.menu-icon {
+  font-size: 40rpx;
+}
+
+.menu-text {
+  font-size: 30rpx;
+  color: #333333;
+}
+
+.menu-arrow {
+  font-size: 40rpx;
+  color: #CCCCCC;
+  font-weight: 300;
+}
+
+.menu-divider {
+  height: 1rpx;
+  background-color: #F0F0F0;
+  margin-left: 92rpx;
+}
+
+/* 底部信息 */
+.footer-info {
+  margin-top: 60rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.footer-text {
+  font-size: 22rpx;
+  color: #CCCCCC;
+}
+
+/* Loading */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.loading-card {
+  width: 300rpx;
+  background-color: #FFFFFF;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #FF9F43;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #333333;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

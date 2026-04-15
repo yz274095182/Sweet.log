@@ -1,0 +1,204 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import type { DiabetesType, TimeTag } from '@/utils/constants'
+import { GDM_THRESHOLDS, NORMAL_THRESHOLDS } from '@/utils/constants'
+
+// 用户信息接口
+interface UserInfo {
+  openid: string
+  diabetesType: DiabetesType
+  nickname: string
+  avatar: string
+  thresholdConfig: Record<TimeTag, { min: number; max: number }>
+  createdAt: number
+  updatedAt: number
+}
+
+export const useUserStore = defineStore('user', () => {
+  // 状态
+  const userInfo = ref<UserInfo | null>(null)
+  const isInitialized = ref(false)
+  const isLoading = ref(false)
+
+  // 微信云开发相关
+  let db: any = null
+  let usersCollection: any = null
+
+  // 初始化云数据库
+  function initCloudDB() {
+    if (typeof wx !== 'undefined' && wx.cloud && !db) {
+      db = wx.cloud.database()
+      usersCollection = db.collection('users')
+    }
+  }
+
+  // 通过云函数获取用户信息
+  async function getUserInfoByCloud(): Promise<{ openid: string; nickname?: string; avatar?: string } | null> {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'quickstartFunctions',
+        data: { type: 'getOpenId' }
+      })
+      if (res.result && res.result.openid) {
+        return {
+          openid: res.result.openid,
+          nickname: res.result.nickname,
+          avatar: res.result.avatar
+        }
+      }
+      return null
+    } catch (e) {
+      console.error('获取用户信息失败', e)
+      return null
+    }
+  }
+
+  // 获取阈值配置
+  function getThresholds(): Record<TimeTag, { min: number; max: number; default: number }> {
+    if (!userInfo.value) {
+      return GDM_THRESHOLDS
+    }
+    return userInfo.value.diabetesType === 'GDM' ? GDM_THRESHOLDS : NORMAL_THRESHOLDS
+  }
+
+  // 获取用户类型
+  function getDiabetesType(): DiabetesType {
+    return userInfo.value?.diabetesType || 'GDM'
+  }
+
+  // 检查用户状态
+  async function checkUserStatus() {
+    initCloudDB()
+    if (!db || !usersCollection) {
+      console.warn('云数据库未初始化')
+      return
+    }
+
+    isLoading.value = true
+    try {
+      // 获取 openid
+      const loginRes = await getUserInfoByCloud()
+      if (loginRes && loginRes.openid) {
+        // 查询用户是否存在
+        const res = await usersCollection.where({
+          _openid: loginRes.openid
+        }).get()
+
+        if (res.data && res.data.length > 0) {
+          // 用户已存在
+          userInfo.value = {
+            openid: res.data[0]._openid,
+            diabetesType: res.data[0].diabetes_type || 'GDM',
+            nickname: loginRes.nickname || '糖友',
+            avatar: loginRes.avatar || '',
+            thresholdConfig: res.data[0].threshold_config || GDM_THRESHOLDS,
+            createdAt: res.data[0].created_at,
+            updatedAt: res.data[0].updated_at
+          }
+          isInitialized.value = true
+        } else {
+          // 用户不存在，需要引导
+          isInitialized.value = false
+        }
+      }
+    } catch (e: any) {
+      console.error('检查用户状态失败', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 初始化新用户
+  async function initUser(type: DiabetesType) {
+    initCloudDB()
+    if (!db || !usersCollection) {
+      console.warn('云数据库未初始化')
+      return
+    }
+
+    isLoading.value = true
+    try {
+      const loginRes = await getUserInfoByCloud()
+      if (!loginRes || !loginRes.openid) {
+        throw new Error('无法获取用户信息')
+      }
+
+      const thresholds = type === 'GDM' ? GDM_THRESHOLDS : NORMAL_THRESHOLDS
+      const thresholdConfig: Record<string, { min: number; max: number }> = {}
+
+      for (const key in thresholds) {
+        thresholdConfig[key] = {
+          min: thresholds[key as TimeTag].min,
+          max: thresholds[key as TimeTag].max
+        }
+      }
+
+      const now = Date.now()
+      const userData = {
+        _openid: loginRes.openid,
+        diabetes_type: type,
+        nickname: loginRes.nickname || '糖友',
+        avatar: loginRes.avatar || '',
+        threshold_config: thresholdConfig,
+        created_at: now,
+        updated_at: now
+      }
+
+      await usersCollection.add(userData)
+
+      userInfo.value = {
+        openid: loginRes.openid,
+        diabetesType: type,
+        nickname: loginRes.nickname || '糖友',
+        avatar: loginRes.avatar || '',
+        thresholdConfig: thresholdConfig as Record<TimeTag, { min: number; max: number }>,
+        createdAt: now,
+        updatedAt: now
+      }
+      isInitialized.value = true
+    } catch (e: any) {
+      console.error('初始化用户失败', e)
+      throw e
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // 更新阈值配置
+  async function updateThresholdConfig(timeTag: TimeTag, min: number, max: number) {
+    if (!userInfo.value || !db) return
+
+    try {
+      const res = await usersCollection.where({
+        _openid: userInfo.value.openid
+      }).get()
+
+      if (res.data && res.data.length > 0) {
+        const docId = res.data[0]._id
+        const currentConfig = userInfo.value.thresholdConfig
+        currentConfig[timeTag] = { min, max }
+
+        await usersCollection.doc(docId).update({
+          threshold_config: currentConfig,
+          updated_at: Date.now()
+        })
+
+        userInfo.value.thresholdConfig = currentConfig
+      }
+    } catch (e: any) {
+      console.error('更新阈值失败', e)
+      throw e
+    }
+  }
+
+  return {
+    userInfo,
+    isInitialized,
+    isLoading,
+    getThresholds,
+    getDiabetesType,
+    checkUserStatus,
+    initUser,
+    updateThresholdConfig
+  }
+})

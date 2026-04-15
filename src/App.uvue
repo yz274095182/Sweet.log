@@ -1,0 +1,38 @@
+<script setup lang="uts">
+import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { useUserStore } from '@/store/user'
+
+// 初始化微信云开发
+function initCloud() {
+  if (typeof wx !== 'undefined' && wx.cloud) {
+    // 使用当前环境
+    wx.cloud.init({
+      env: wx.cloud.DYNAMIC_CURRENT_ENV,
+      traceUser: true
+    })
+    console.log('云开发初始化成功')
+  }
+}
+
+const userStore = useUserStore()
+
+onLaunch(() => {
+  console.log('App Launch')
+  // 初始化云开发
+  initCloud()
+  // 检查用户是否已完成初始化
+  userStore.checkUserStatus()
+})
+
+onShow(() => {
+  console.log('App Show')
+})
+
+onHide(() => {
+  console.log('App Hide')
+})
+</script>
+
+<style lang="css">
+/* @import './uni.scss'; */
+</style>

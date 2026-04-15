@@ -1,0 +1,622 @@
+<template>
+  <view class="page-container">
+    <!-- 时间范围切换 -->
+    <view class="segment-control">
+      <view
+        class="segment-item"
+        :class="{ active: dateRange === 7 }"
+        @click="switchRange(7)"
+      >
+        <text class="segment-text">最近7天</text>
+      </view>
+      <view
+        class="segment-item"
+        :class="{ active: dateRange === 30 }"
+        @click="switchRange(30)"
+      >
+        <text class="segment-text">最近30天</text>
+      </view>
+    </view>
+
+    <!-- 图表区域 -->
+    <view class="chart-card">
+      <view v-if="chartData.length > 0" class="chart-wrapper">
+        <!-- 图例 -->
+        <view class="chart-legend">
+          <view
+            v-for="tag in visibleTags"
+            :key="tag"
+            class="legend-item"
+            :class="{ inactive: !selectedTags.includes(tag) }"
+            @click="toggleTag(tag)"
+          >
+            <view class="legend-dot" :style="{ backgroundColor: getTagColor(tag) }"></view>
+            <text class="legend-text">{{ tag }}</text>
+          </view>
+        </view>
+
+        <!-- 简易图表 (使用 uCharts) -->
+        <view class="chart-canvas">
+          <!-- 使用 div 模拟图表 -->
+          <view class="simple-chart">
+            <!-- Y轴标签 -->
+            <view class="y-axis">
+              <text class="y-label">{{ yMax }}</text>
+              <text class="y-label">{{ ((yMax + yMin) / 2).toFixed(1) }}</text>
+              <text class="y-label">{{ yMin }}</text>
+            </view>
+
+            <!-- 图表区域 -->
+            <view class="chart-area">
+              <!-- 警戒线 -->
+              <view class="threshold-line high" :style="{ top: thresholdLineTop + '%' }">
+                <text class="threshold-label">上限</text>
+              </view>
+              <view class="threshold-line low" :style="{ bottom: thresholdLineBottom + '%' }">
+                <text class="threshold-label">下限</text>
+              </view>
+
+              <!-- 折线图容器 -->
+              <view class="lines-container">
+                <view
+                  v-for="(tag, index) in selectedTags"
+                  :key="tag"
+                  class="line-group"
+                >
+                  <view
+                    v-for="(point, pointIndex) in getLinePoints(tag)"
+                    :key="pointIndex"
+                    class="point-container"
+                    :style="{ left: point.x + '%', top: point.y + '%' }"
+                  >
+                    <view class="point" :style="{ backgroundColor: getTagColor(tag) }"></view>
+                    <view v-if="pointIndex > 0" class="line-segment" :style="getLineStyle(tag, pointIndex)"></view>
+                  </view>
+                </view>
+              </view>
+
+              <!-- X轴标签 -->
+              <view class="x-axis">
+                <text v-for="(label, index) in xLabels" :key="index" class="x-label">{{ label }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view v-else class="empty-state">
+        <text class="empty-icon">📊</text>
+        <text class="empty-title">图表正在酝酿中...</text>
+        <text class="empty-desc">快去首页记录第一笔数据吧！</text>
+      </view>
+    </view>
+
+    <!-- 数据简报 -->
+    <view class="stats-card">
+      <view class="stats-header">
+        <text class="stats-title">📈 数据简报</text>
+      </view>
+      <view class="stats-content">
+        <view class="stats-row">
+          <text class="stats-label">近{{ dateRange }}天记录</text>
+          <text class="stats-value">{{ recordStore.stats.total }} 次</text>
+        </view>
+        <view class="stats-divider"></view>
+        <view class="stats-row">
+          <view class="stats-item">
+            <view class="stats-dot green"></view>
+            <text class="stats-item-label">完美达标</text>
+            <text class="stats-item-value">{{ recordStore.stats.normal }} 次</text>
+          </view>
+          <view class="stats-item">
+            <view class="stats-dot orange"></view>
+            <text class="stats-item-label">偏高</text>
+            <text class="stats-item-value">{{ recordStore.stats.high }} 次</text>
+          </view>
+          <view class="stats-item">
+            <view class="stats-dot red"></view>
+            <text class="stats-item-label">偏低</text>
+            <text class="stats-item-value">{{ recordStore.stats.low }} 次</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 小贴士 -->
+      <view v-if="tipMessage" class="tip-card">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">{{ tipMessage }}</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="uts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRecordStore } from '@/store/record'
+import { useUserStore } from '@/store/user'
+import { TIME_TAGS, type TimeTag } from '@/utils/constants'
+
+const recordStore = useRecordStore()
+const userStore = useUserStore()
+
+// 状态
+const dateRange = ref(7)
+const selectedTags = ref<TimeTag[]>(['早餐前', '早餐后', '午餐后', '晚餐后'])
+const chartData = ref<any[]>([])
+const xLabels = ref<string[]>([])
+
+// 颜色映射
+const TAG_COLORS: Record<TimeTag, string> = {
+  '早餐前': '#FF9F43',
+  '早餐后': '#FA8C16',
+  '午餐前': '#52C41A',
+  '午餐后': '#1890FF',
+  '晚餐前': '#722ED1',
+  '晚餐后': '#EB2F96',
+  '睡前': '#13C2C2'
+}
+
+// Y轴范围
+const yMin = 2.0
+const yMax = 12.0
+
+// 可见的时段标签
+const visibleTags = TIME_TAGS
+
+// 警戒线位置 (百分比)
+const thresholdLineTop = computed(() => {
+  const thresholds = userStore.getThresholds()
+  const avgMax = Object.values(thresholds).reduce((sum, t) => sum + t.max, 0) / Object.keys(thresholds).length
+  return ((yMax - avgMax) / (yMax - yMin)) * 100
+})
+
+const thresholdLineBottom = computed(() => {
+  const thresholds = userStore.getThresholds()
+  const avgMin = Object.values(thresholds).reduce((sum, t) => sum + t.min, 0) / Object.keys(thresholds).length
+  return ((avgMin - yMin) / (yMax - yMin)) * 100
+})
+
+// 获取时段颜色
+function getTagColor(tag: TimeTag): string {
+  return TAG_COLORS[tag] || '#999999'
+}
+
+// 切换标签显示
+function toggleTag(tag: TimeTag) {
+  const index = selectedTags.value.indexOf(tag)
+  if (index > -1) {
+    if (selectedTags.value.length > 1) {
+      selectedTags.value.splice(index, 1)
+    }
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+// 获取某标签的折线点
+function getLinePoints(tag: TimeTag): Array<{ x: number; y: number }> {
+  const points: Array<{ x: number; y: number }> = []
+  const tagRecords = chartData.value.filter(r => r.timeTag === tag)
+
+  tagRecords.forEach((record, index) => {
+    const x = (index / Math.max(tagRecords.length - 1, 1)) * 100
+    const y = ((yMax - record.glucoseValue) / (yMax - yMin)) * 100
+    points.push({ x, y: Math.max(0, Math.min(100, y)) })
+  })
+
+  return points
+}
+
+// 获取线条样式
+function getLineStyle(tag: TimeTag, pointIndex: number): any {
+  const points = getLinePoints(tag)
+  if (pointIndex >= points.length) return {}
+
+  const prev = points[pointIndex - 1]
+  const curr = points[pointIndex]
+
+  const dx = curr.x - prev.x
+  const dy = curr.y - prev.y
+  const length = Math.sqrt(dx * dx + dy * dy)
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+
+  return {
+    position: 'absolute',
+    width: length + '%',
+    height: '2rpx',
+    backgroundColor: getTagColor(tag),
+    transformOrigin: 'left center',
+    transform: `rotate(${angle}deg)`,
+    top: '50%',
+    left: '50%',
+    marginTop: '-1rpx',
+    marginLeft: '0'
+  }
+}
+
+// 切换时间范围
+function switchRange(days: number) {
+  dateRange.value = days
+  fetchData()
+}
+
+// 小贴士
+const tipMessage = computed(() => {
+  const stats = recordStore.stats
+  if (stats.total === 0) return ''
+
+  const highRatio = stats.high / stats.total
+  const lowRatio = stats.low / stats.total
+
+  if (lowRatio > 0.2) {
+    return '低血糖比例偏高，请注意及时进食！'
+  } else if (highRatio > 0.3) {
+    return '早餐后波动偏大，建议多散步哦～'
+  } else if (stats.normal === stats.total) {
+    return '太棒了！本周全部达标，继续保持！'
+  } else {
+    return '坚持记录，数据会越来越稳定哦！'
+  }
+})
+
+// 获取数据
+async function fetchData() {
+  const records = await recordStore.fetchRecentRecords(dateRange.value)
+  chartData.value = records
+
+  // 生成X轴标签
+  const dates = [...new Set(records.map(r => r.dateStr))].slice(-dateRange.value)
+  xLabels.value = dates.map(d => {
+    const date = new Date(d)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  })
+}
+
+// 初始化
+onMounted(() => {
+  fetchData()
+})
+
+// 监听 tab 切换
+watch(() => dateRange.value, () => {
+  fetchData()
+})
+</script>
+
+<style lang="css">
+.page-container {
+  width: 750rpx;
+  min-height: 100vh;
+  background-color: #F8F9FA;
+  padding: 24rpx;
+}
+
+/* 时间切换 */
+.segment-control {
+  display: flex;
+  flex-direction: row;
+  background-color: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 8rpx;
+  gap: 8rpx;
+}
+
+.segment-item {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.segment-item.active {
+  background-color: #FF9F43;
+}
+
+.segment-text {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.segment-item.active .segment-text {
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+/* 图表卡片 */
+.chart-card {
+  margin-top: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.chart-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 图例 */
+.chart-legend {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.legend-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background-color: #F8F9FA;
+}
+
+.legend-item.inactive {
+  opacity: 0.4;
+}
+
+.legend-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+}
+
+.legend-text {
+  font-size: 22rpx;
+  color: #666666;
+}
+
+/* 图表画布 */
+.chart-canvas {
+  width: 100%;
+  height: 400rpx;
+}
+
+.simple-chart {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.y-axis {
+  width: 60rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 8rpx;
+}
+
+.y-label {
+  font-size: 20rpx;
+  color: #999999;
+}
+
+.chart-area {
+  flex: 1;
+  position: relative;
+  border-left: 1rpx solid #E0E0E0;
+  border-bottom: 1rpx solid #E0E0E0;
+}
+
+/* 警戒线 */
+.threshold-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.threshold-line.high {
+  background-color: rgba(245, 34, 45, 0.3);
+}
+
+.threshold-line.low {
+  background-color: rgba(250, 140, 22, 0.3);
+}
+
+.threshold-label {
+  position: absolute;
+  right: 8rpx;
+  font-size: 18rpx;
+  color: #999999;
+  background-color: #FFFFFF;
+  padding: 0 4rpx;
+}
+
+/* 折线点 */
+.lines-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40rpx;
+}
+
+.line-group {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.point-container {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.point {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.line-segment {
+  position: absolute;
+}
+
+/* X轴 */
+.x-axis {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40rpx;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.x-label {
+  font-size: 20rpx;
+  color: #999999;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+}
+
+.empty-title {
+  margin-top: 24rpx;
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.empty-desc {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #999999;
+}
+
+/* 数据简报 */
+.stats-card {
+  margin-top: 24rpx;
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.stats-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.stats-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.stats-content {
+  margin-top: 24rpx;
+}
+
+.stats-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats-label {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.stats-value {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.stats-divider {
+  height: 1rpx;
+  background-color: #F0F0F0;
+  margin: 24rpx 0;
+}
+
+.stats-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.stats-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+}
+
+.stats-dot.green {
+  background-color: #52C41A;
+}
+
+.stats-dot.orange {
+  background-color: #FA8C16;
+}
+
+.stats-dot.red {
+  background-color: #F5222D;
+}
+
+.stats-item-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.stats-item-value {
+  font-size: 26rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+/* 小贴士 */
+.tip-card {
+  margin-top: 24rpx;
+  background-color: rgba(255, 159, 67, 0.1);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+}
+
+.tip-icon {
+  font-size: 32rpx;
+}
+
+.tip-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.5;
+}
+</style>

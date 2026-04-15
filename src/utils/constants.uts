@@ -1,0 +1,59 @@
+// 糖尿病类型
+export type DiabetesType = 'GDM' | 'NORMAL'
+export const DiabetesType = {
+  GDM: 'GDM' as DiabetesType,
+  NORMAL: 'NORMAL' as DiabetesType
+}
+
+// 时间段标签
+export type TimeTag = '早餐前' | '早餐后' | '午餐前' | '午餐后' | '晚餐前' | '晚餐后' | '睡前'
+
+// 血糖状态
+export type GlucoseStatus = 'normal' | 'high' | 'low'
+
+// GDM孕期模式阈值配置
+export const GDM_THRESHOLDS: Record<TimeTag, { min: number; max: number; default: number }> = {
+  '早餐前': { min: 3.3, max: 5.3, default: 4.5 },   // 空腹
+  '午餐前': { min: 3.3, max: 5.3, default: 4.8 },
+  '晚餐前': { min: 3.3, max: 5.3, default: 4.8 },
+  '早餐后': { min: 4.4, max: 6.7, default: 5.5 },
+  '午餐后': { min: 4.4, max: 6.7, default: 5.5 },
+  '晚餐后': { min: 4.4, max: 6.7, default: 5.5 },
+  '睡前': { min: 4.4, max: 6.7, default: 5.5 }
+}
+
+// NORMAL常规模式阈值配置
+export const NORMAL_THRESHOLDS: Record<TimeTag, { min: number; max: number; default: number }> = {
+  '早餐前': { min: 3.9, max: 7.0, default: 5.7 },   // 空腹/餐前
+  '午餐前': { min: 3.9, max: 7.0, default: 5.7 },
+  '晚餐前': { min: 3.9, max: 7.0, default: 5.7 },
+  '早餐后': { min: 3.9, max: 10.0, default: 7.5 },
+  '午餐后': { min: 3.9, max: 10.0, default: 7.5 },
+  '晚餐后': { min: 3.9, max: 10.0, default: 7.5 },
+  '睡前': { min: 3.9, max: 8.0, default: 7.0 }
+}
+
+// 时段配置
+export const TIME_TAGS: TimeTag[] = ['早餐前', '早餐后', '午餐前', '午餐后', '晚餐前', '晚餐后', '睡前']
+
+// 时段图标映射
+export const TIME_TAG_ICONS: Record<TimeTag, string> = {
+  '早餐前': '🌅',
+  '早餐后': '🌞',
+  '午餐前': '🌤️',
+  '午餐后': '☀️',
+  '晚餐前': '🌇',
+  '晚餐后': '🌆',
+  '睡前': '🌙'
+}
+
+// 时段小时范围（用于自动识别）
+export const TIME_TAG_HOURS: Record<TimeTag, { start: number; end: number }> = {
+  '早餐前': { start: 0, end: 7 },
+  '早餐后': { start: 7, end: 10 },
+  '午餐前': { start: 10, end: 12 },
+  '午餐后': { start: 12, end: 15 },
+  '晚餐前': { start: 15, end: 18 },
+  '晚餐后': { start: 18, end: 21 },
+  '睡前': { start: 21, end: 24 }
+}
