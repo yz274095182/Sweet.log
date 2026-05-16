@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/record/record",
+    "pages/history/history",
+    "pages/tools/index",
+    "pages/tools/food/index",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarTitleText": "血糖健康管理",
+    "navigationBarBackgroundColor": "#F4FAF6",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F4FAF6"
+  },
+  "tabBar": {
+    "color": "#7B847E",
+    "selectedColor": "#2F7D59",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/record/record",
+        "iconPath": "assets/lucide/png/clipboard-pen-line-muted.png",
+        "selectedIconPath": "assets/lucide/png/clipboard-pen-line-green.png",
+        "text": "记录"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "iconPath": "assets/lucide/png/chart-line-muted.png",
+        "selectedIconPath": "assets/lucide/png/chart-line-green.png",
+        "text": "历史"
+      },
+      {
+        "pagePath": "pages/tools/index",
+        "iconPath": "assets/lucide/png/notebook-text-muted.png",
+        "selectedIconPath": "assets/lucide/png/notebook-text-green.png",
+        "text": "工具"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "iconPath": "assets/lucide/png/sliders-horizontal-muted.png",
+        "selectedIconPath": "assets/lucide/png/sliders-horizontal-green.png",
+        "text": "设置"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

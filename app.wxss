@@ -1,0 +1,316 @@
+page {
+  min-height: 100%;
+  color: #1f2a24;
+  background: #f7faf7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 16px;
+}
+
+view,
+text,
+input,
+textarea,
+button {
+  box-sizing: border-box;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  line-height: 1;
+}
+
+button::after {
+  border: none;
+}
+
+.page {
+  min-height: 100vh;
+  padding: 28rpx;
+}
+
+.section {
+  margin-top: 28rpx;
+}
+
+.panel {
+  padding: 28rpx;
+  border: 1rpx solid #e0e9e2;
+  border-radius: 16rpx;
+  background: #ffffff;
+}
+
+.muted {
+  color: #758178;
+}
+
+.primary-button {
+  height: 96rpx;
+  border-radius: 12rpx;
+  color: #ffffff;
+  background: #2f7d59;
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 96rpx;
+}
+
+.secondary-button {
+  height: 76rpx;
+  border: 1rpx solid #d7e4da;
+  border-radius: 12rpx;
+  color: #2f7d59;
+  background: #ffffff;
+  font-size: 28rpx;
+  line-height: 74rpx;
+}
+
+.danger {
+  color: #bc4b42;
+}
+
+.warn {
+  color: #a56a18;
+}
+
+.ok {
+  color: #2f7d59;
+}
+
+.settings-page {
+  min-height: 100vh;
+  padding: 32rpx 24rpx 58rpx;
+  background: #f7faf7;
+}
+
+.settings-page .settings-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-top: 12rpx;
+  margin-bottom: 26rpx;
+}
+
+.settings-page .hero-kicker {
+  color: #2f7d59;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+
+.settings-page .hero-title {
+  margin-top: 8rpx;
+  color: #111713;
+  font-size: 48rpx;
+  font-weight: 900;
+  line-height: 58rpx;
+}
+
+.settings-page .save-pill {
+  height: 62rpx;
+  padding: 0 28rpx;
+  border: 1rpx solid #d8eadf;
+  border-radius: 999rpx;
+  color: #2f7d59;
+  background: #ffffff;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 60rpx;
+}
+
+.settings-page .action-loading {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.settings-page .mode-card,
+.settings-page .form-card,
+.settings-page .export-card,
+.settings-page .threshold-card {
+  border: 1rpx solid #e0e8e3;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 32rpx rgba(31, 42, 36, 0.05);
+}
+
+.settings-page .mode-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+}
+
+.settings-page .mode-title,
+.settings-page .export-title,
+.settings-page .section-title {
+  color: #151b17;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.settings-page .mode-desc,
+.settings-page .export-desc,
+.settings-page .threshold-summary {
+  margin-top: 8rpx;
+  color: #758178;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.settings-page .notice-card {
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  border: 1rpx solid #e3eadf;
+  border-radius: 16rpx;
+  color: #6a756d;
+  background: #f2f8f4;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.settings-page .section-title {
+  margin-top: 30rpx;
+  margin-bottom: 16rpx;
+}
+
+.settings-page .section-title.compact {
+  margin: 0;
+}
+
+.settings-page .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 30rpx;
+  margin-bottom: 16rpx;
+}
+
+.settings-page .reset-link {
+  color: #2f7d59;
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
+.settings-page .form-card {
+  padding: 0 28rpx;
+}
+
+.settings-page .form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96rpx;
+  border-bottom: 1rpx solid #e6ede8;
+}
+
+.settings-page .form-row:last-child {
+  border-bottom: none;
+}
+
+.settings-page .field-label {
+  color: #59655d;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.settings-page .field-input {
+  width: 430rpx;
+  color: #1f2a24;
+  font-size: 28rpx;
+  text-align: right;
+}
+
+.settings-page .picker-value {
+  color: #1f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.settings-page .export-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx;
+}
+
+.settings-page .export-action {
+  height: 66rpx;
+  min-width: 120rpx;
+  border-radius: 999rpx;
+  color: #ffffff;
+  background: #2f7d59;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 66rpx;
+  text-align: center;
+}
+
+.settings-page .threshold-card {
+  margin-bottom: 16rpx;
+  padding: 24rpx;
+}
+
+.settings-page .threshold-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-page .threshold-name {
+  color: #1f2a24;
+  font-size: 29rpx;
+  font-weight: 900;
+}
+
+.settings-page .threshold-inputs {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+.settings-page .threshold-input {
+  flex: 1;
+  height: 72rpx;
+  margin-right: 16rpx;
+  padding: 0 18rpx;
+  border: 1rpx solid #dce7df;
+  border-radius: 12rpx;
+  color: #1f2a24;
+  background: #f8fbf8;
+  font-size: 28rpx;
+}
+
+.settings-page .threshold-input:last-child {
+  margin-right: 0;
+}
+
+.settings-page .bottom-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 28rpx;
+}
+
+.settings-page .secondary-action,
+.settings-page .primary-action {
+  height: 88rpx;
+  border-radius: 14rpx;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 88rpx;
+  text-align: center;
+}
+
+.settings-page .secondary-action {
+  width: 210rpx;
+  margin-right: 18rpx;
+  border: 1rpx solid #dce7df;
+  color: #2f7d59;
+  background: #ffffff;
+}
+
+.settings-page .primary-action {
+  flex: 1;
+  color: #ffffff;
+  background: #2f7d59;
+  box-shadow: 0 12rpx 30rpx rgba(47, 125, 89, 0.2);
+}

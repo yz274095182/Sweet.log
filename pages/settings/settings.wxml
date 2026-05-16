@@ -1,0 +1,85 @@
+<view class="settings-page">
+  <view class="settings-hero">
+    <view>
+      <view class="hero-title">设置</view>
+    </view>
+    <view class="save-pill {{saving ? 'action-loading' : ''}}" bindtap="onSave">{{saving ? "保存中" : "保存"}}</view>
+  </view>
+
+  <view class="mode-card">
+    <view>
+      <view class="mode-title">孕期模式</view>
+      <view class="mode-desc">开启后使用孕期默认警戒线，可继续手动调整</view>
+    </view>
+    <switch checked="{{profile.isPregnant}}" color="#2F7D59" bindchange="onPregnancyChange" />
+  </view>
+
+  <view class="notice-card">
+    Sweet.log 仅用于血糖记录和趋势查看，不提供诊断或治疗建议；孕期目标范围请以医生或产检机构要求为准。
+  </view>
+
+  <view class="section-title">个人信息</view>
+  <view class="form-card">
+    <view class="form-row">
+      <view class="field-label">昵称</view>
+      <input class="field-input" value="{{profile.nickname}}" placeholder="例如：小糖记录" bindinput="onNicknameInput" />
+    </view>
+    <view class="form-row">
+      <view class="field-label">预产期</view>
+      <picker mode="date" value="{{profile.dueDate}}" bindchange="onDueDateChange">
+        <view class="picker-value">{{dueDateText}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="section-title">数据</view>
+  <view class="export-card">
+    <view>
+      <view class="export-title">导出 CSV</view>
+      <view class="export-desc">包含时间、标签、血糖值、状态、备注和阈值</view>
+    </view>
+    <view class="export-action {{exporting ? 'action-loading' : ''}}" bindtap="onExportCsv">{{exportText}}</view>
+  </view>
+
+  <view class="section-head">
+    <view class="section-title compact">警戒线</view>
+    <view class="reset-link" bindtap="onResetDefaults">恢复默认</view>
+  </view>
+
+  <view class="threshold-list">
+    <view wx:for="{{rules}}" wx:key="tag" class="threshold-card">
+      <view class="threshold-top">
+        <view>
+          <view class="threshold-name">{{item.label}}</view>
+          <view class="threshold-summary">当前：{{item.summary}}</view>
+        </view>
+        <switch checked="{{item.enabled}}" color="#2F7D59" data-index="{{index}}" bindchange="onRuleEnabledChange" />
+      </view>
+      <view class="threshold-inputs">
+        <input
+          class="threshold-input"
+          type="digit"
+          placeholder="下限"
+          value="{{item.minText}}"
+          data-index="{{index}}"
+          data-field="min"
+          bindinput="onRuleInput"
+        />
+        <input
+          class="threshold-input"
+          type="digit"
+          placeholder="上限"
+          value="{{item.maxText}}"
+          data-index="{{index}}"
+          data-field="max"
+          bindinput="onRuleInput"
+        />
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-actions">
+    <view class="secondary-action" bindtap="onResetDefaults">恢复默认</view>
+    <view class="primary-action {{saving ? 'action-loading' : ''}}" bindtap="onSave">{{saving ? "保存中..." : "保存设置"}}</view>
+  </view>
+</view>

@@ -1,0 +1,255 @@
+.settings-page {
+  min-height: 100vh;
+  padding: 32rpx 24rpx 58rpx;
+  background: #f7faf7;
+}
+
+.settings-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-top: 12rpx;
+  margin-bottom: 26rpx;
+}
+
+.hero-title {
+  color: #111713;
+  font-size: 48rpx;
+  font-weight: 900;
+  line-height: 58rpx;
+}
+
+.save-pill {
+  height: 62rpx;
+  padding: 0 28rpx;
+  border: 1rpx solid #d8eadf;
+  border-radius: 999rpx;
+  color: #2f7d59;
+  background: #ffffff;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 60rpx;
+}
+
+.action-loading {
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.mode-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border: 1rpx solid #e0e8e3;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 32rpx rgba(31, 42, 36, 0.05);
+}
+
+.mode-title {
+  color: #151b17;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.mode-desc {
+  margin-top: 8rpx;
+  color: #758178;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.notice-card {
+  margin-top: 16rpx;
+  padding: 20rpx 24rpx;
+  border: 1rpx solid #e3eadf;
+  border-radius: 16rpx;
+  color: #6a756d;
+  background: #f2f8f4;
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.section-title {
+  margin-top: 30rpx;
+  margin-bottom: 16rpx;
+  color: #151b17;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.section-title.compact {
+  margin: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 30rpx;
+  margin-bottom: 16rpx;
+}
+
+.reset-link {
+  color: #2f7d59;
+  font-size: 26rpx;
+  font-weight: 900;
+}
+
+.form-card {
+  padding: 0 28rpx;
+  border: 1rpx solid #e0e8e3;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 32rpx rgba(31, 42, 36, 0.05);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96rpx;
+  border-bottom: 1rpx solid #e6ede8;
+}
+
+.form-row:last-child {
+  border-bottom: none;
+}
+
+.field-label {
+  color: #59655d;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.field-input {
+  width: 430rpx;
+  color: #1f2a24;
+  font-size: 28rpx;
+  text-align: right;
+}
+
+.picker-value {
+  color: #1f2a24;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.export-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx;
+  border: 1rpx solid #e0e8e3;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 32rpx rgba(31, 42, 36, 0.05);
+}
+
+.export-title {
+  color: #151b17;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.export-desc {
+  margin-top: 8rpx;
+  color: #758178;
+  font-size: 24rpx;
+  line-height: 1.4;
+}
+
+.export-action {
+  height: 66rpx;
+  min-width: 120rpx;
+  border-radius: 999rpx;
+  color: #ffffff;
+  background: #2f7d59;
+  font-size: 26rpx;
+  font-weight: 900;
+  line-height: 66rpx;
+  text-align: center;
+}
+
+.threshold-card {
+  margin-bottom: 16rpx;
+  padding: 24rpx;
+  border: 1rpx solid #e0e8e3;
+  border-radius: 20rpx;
+  background: #ffffff;
+  box-shadow: 0 12rpx 32rpx rgba(31, 42, 36, 0.05);
+}
+
+.threshold-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.threshold-name {
+  color: #1f2a24;
+  font-size: 29rpx;
+  font-weight: 900;
+}
+
+.threshold-summary {
+  margin-top: 8rpx;
+  color: #758178;
+  font-size: 24rpx;
+}
+
+.threshold-inputs {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+.threshold-input {
+  flex: 1;
+  height: 72rpx;
+  margin-right: 16rpx;
+  padding: 0 18rpx;
+  border: 1rpx solid #dce7df;
+  border-radius: 12rpx;
+  color: #1f2a24;
+  background: #f8fbf8;
+  font-size: 28rpx;
+}
+
+.threshold-input:last-child {
+  margin-right: 0;
+}
+
+.bottom-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 28rpx;
+}
+
+.secondary-action {
+  width: 210rpx;
+  height: 88rpx;
+  margin-right: 18rpx;
+  border: 1rpx solid #dce7df;
+  border-radius: 14rpx;
+  color: #2f7d59;
+  background: #ffffff;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 88rpx;
+  text-align: center;
+}
+
+.primary-action {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 14rpx;
+  color: #ffffff;
+  background: #2f7d59;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 88rpx;
+  text-align: center;
+  box-shadow: 0 12rpx 30rpx rgba(47, 125, 89, 0.2);
+}

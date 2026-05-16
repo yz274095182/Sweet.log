@@ -1,0 +1,239 @@
+<view class="history-page">
+  <view class="history-tabs">
+    <view
+      wx:for="{{viewOptions}}"
+      wx:key="key"
+      class="history-tab {{item.active ? 'history-tab-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onSelectView"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <view class="date-range-card">
+    <picker mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+      <view class="date-range-field">{{startDate}}</view>
+    </picker>
+    <view class="date-range-separator">至</view>
+    <picker mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+      <view class="date-range-field">{{endDate}}</view>
+    </picker>
+    <image class="date-range-icon" src="/assets/lucide/png/calendar-days-green.png" mode="aspectFit" />
+  </view>
+
+  <view wx:if="{{showTable}}" class="table-card">
+    <view class="glucose-table">
+      <view class="table-row table-head-main">
+        <view class="table-cell date-cell table-date-head">日期</view>
+        <view class="table-cell meal-head meal-head-breakfast">早餐</view>
+        <view class="table-cell meal-head meal-head-lunch">午餐</view>
+        <view class="table-cell meal-head meal-head-dinner">晚餐</view>
+        <view class="table-cell single-head">睡前</view>
+        <view class="table-cell single-head">随机</view>
+      </view>
+      <view class="table-row table-head-sub">
+        <view class="table-cell date-cell"></view>
+        <view class="table-cell small-cell">前</view>
+        <view class="table-cell small-cell">后</view>
+        <view class="table-cell small-cell">前</view>
+        <view class="table-cell small-cell">后</view>
+        <view class="table-cell small-cell">前</view>
+        <view class="table-cell small-cell">后</view>
+        <view class="table-cell single-sub"></view>
+        <view class="table-cell single-sub"></view>
+      </view>
+      <view wx:for="{{tableRows}}" wx:key="dateKey" class="table-row table-body-row">
+        <view class="table-cell date-cell table-date-cell">
+          <view>{{item.dateLabel}}</view>
+          <view class="weekday-label">{{item.weekday}}</view>
+        </view>
+        <view class="table-cell small-cell status-{{item.breakfastBefore.status}}">{{item.breakfastBefore.text}}</view>
+        <view class="table-cell small-cell status-{{item.breakfastAfter.status}}">{{item.breakfastAfter.text}}</view>
+        <view class="table-cell small-cell status-{{item.lunchBefore.status}}">{{item.lunchBefore.text}}</view>
+        <view class="table-cell small-cell status-{{item.lunchAfter.status}}">{{item.lunchAfter.text}}</view>
+        <view class="table-cell small-cell status-{{item.dinnerBefore.status}}">{{item.dinnerBefore.text}}</view>
+        <view class="table-cell small-cell status-{{item.dinnerAfter.status}}">{{item.dinnerAfter.text}}</view>
+        <view class="table-cell single-sub status-{{item.bedtime.status}}">{{item.bedtime.text}}</view>
+        <view class="table-cell single-sub status-{{item.random.status}}">{{item.random.text}}</view>
+      </view>
+    </view>
+    <view class="table-footer">{{tableFooterText}}</view>
+  </view>
+
+  <view wx:if="{{showStats}}" class="summary-card">
+    <view class="summary-main">
+      <view class="summary-number">{{stats.avg}}</view>
+      <view class="summary-unit">mmol/L</view>
+      <view class="summary-label">当前筛选平均值</view>
+    </view>
+    <view class="summary-grid">
+      <view class="summary-item">
+        <text class="summary-value">{{stats.count}}</text>
+        <text class="summary-name">记录</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value">{{stats.normalRate}}</text>
+        <text class="summary-name">达标率</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-value">{{stats.highCount}}</text>
+        <text class="summary-name">偏高</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showTrend}}" class="trend-card">
+    <view class="card-title">近 7 条趋势</view>
+    <view wx:if="{{!trendLine.points.length}}" class="empty-inline">暂无趋势数据</view>
+    <view wx:else class="trend-line-chart">
+      <view class="trend-axis-label trend-axis-max">{{trendLine.maxLabel}}</view>
+      <view class="trend-axis-label trend-axis-mid">{{trendLine.midLabel}}</view>
+      <view class="trend-axis-label trend-axis-min">{{trendLine.minLabel}}</view>
+      <view class="trend-grid trend-grid-top"></view>
+      <view class="trend-grid trend-grid-mid"></view>
+      <view class="trend-grid trend-grid-bottom"></view>
+
+      <view class="trend-line-layer">
+        <view
+          wx:for="{{trendLine.segments}}"
+          wx:key="id"
+          class="trend-line-segment status-{{item.status}}"
+          style="left: {{item.left}}rpx; top: {{item.top}}rpx; width: {{item.width}}rpx; transform: rotate({{item.angle}}deg);"
+        ></view>
+        <view
+          wx:for="{{trendLine.points}}"
+          wx:key="id"
+          class="trend-point-wrap"
+          style="left: {{item.left}}rpx; top: {{item.top}}rpx;"
+        >
+          <view class="trend-point status-{{item.status}}"></view>
+          <view class="trend-point-value">{{item.valueText}}</view>
+          <view class="trend-point-label">{{item.label}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view wx:if="{{!showTable}}" class="filter-scroll" scroll-x enable-flex>
+    <view class="filter-row">
+      <view
+        wx:for="{{tagOptions}}"
+        wx:key="key"
+        class="filter-chip {{item.active ? 'filter-chip-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSelectTag"
+      >
+        {{item.label}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <scroll-view wx:if="{{!showTable}}" class="filter-scroll" scroll-x enable-flex>
+    <view class="filter-row">
+      <view
+        wx:for="{{statusOptions}}"
+        wx:key="key"
+        class="filter-chip {{item.active ? 'filter-chip-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSelectStatus"
+      >
+        {{item.label}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{showList && !records.length}}" class="empty-card">
+    <view class="empty-title">没有符合条件的记录</view>
+    <view class="empty-text">可以调整筛选条件，或先去记录一条血糖。</view>
+    <view class="empty-action" bindtap="goRecord">去记录</view>
+  </view>
+
+  <view wx:if="{{showList && records.length}}" class="record-list">
+    <view wx:for="{{records}}" wx:key="_id" class="record-card status-card-{{item.status}}">
+      <view class="record-card-head">
+        <view class="record-tag-time">
+          <text class="record-tag">{{item.tagLabel}}</text>
+          <text class="record-dot">·</text>
+          <text>{{item.dayText}} {{item.timeText}}</text>
+        </view>
+        <view class="record-status status-{{item.status}}">{{item.statusText}}</view>
+      </view>
+
+      <view class="record-card-main">
+        <view class="record-value-row">
+          <text class="record-value">{{item.valueText}}</text>
+          <text class="record-unit">mmol/L</text>
+        </view>
+        <view class="record-threshold">目标 {{item.thresholdText}}</view>
+      </view>
+
+      <view class="record-card-foot">
+        <view class="record-note">{{item.note || "暂无备注"}}</view>
+        <view class="record-actions">
+          <view class="record-edit" data-id="{{item._id}}" catchtap="onEditRecord">修改</view>
+          <view
+            class="record-delete {{deletingId == item._id ? 'record-delete-loading' : ''}}"
+            data-id="{{item._id}}"
+            catchtap="onDeleteRecord"
+          >
+            {{deletingId == item._id ? "删除中" : "删除"}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{editingRecordId}}" class="edit-mask" catchtap="onCancelEdit">
+    <view class="edit-sheet" catchtap="onEditSheetTap">
+      <view class="edit-sheet-head">
+        <view>
+          <view class="edit-kicker">历史记录</view>
+          <view class="edit-title">修改记录</view>
+        </view>
+        <view class="edit-close" catchtap="onCancelEdit">关闭</view>
+      </view>
+
+      <view class="edit-field">
+        <view class="edit-label">血糖值</view>
+        <view class="edit-value-row">
+          <input class="edit-value-input" type="digit" value="{{editForm.value}}" bindinput="onEditValueInput" />
+          <text class="edit-unit">mmol/L</text>
+        </view>
+      </view>
+
+      <view class="edit-grid">
+        <picker mode="selector" range="{{editTagOptions}}" range-key="label" value="{{editTagIndex}}" bindchange="onEditTagChange">
+          <view class="edit-select">
+            <text class="edit-select-label">标签</text>
+            <text class="edit-select-value">{{editTagOptions[editTagIndex].label}}</text>
+          </view>
+        </picker>
+
+        <picker mode="date" value="{{editForm.date}}" bindchange="onEditDateChange">
+          <view class="edit-select">
+            <text class="edit-select-label">日期</text>
+            <text class="edit-select-value">{{editForm.date}}</text>
+          </view>
+        </picker>
+
+        <picker mode="time" value="{{editForm.time}}" bindchange="onEditTimeChange">
+          <view class="edit-select">
+            <text class="edit-select-label">时间</text>
+            <text class="edit-select-value">{{editForm.time}}</text>
+          </view>
+        </picker>
+      </view>
+
+      <view class="edit-field">
+        <view class="edit-label">备注</view>
+        <textarea class="edit-note" value="{{editForm.note}}" maxlength="200" placeholder="备注：餐食、散步、复测..." bindinput="onEditNoteInput" />
+      </view>
+
+      <view class="edit-actions">
+        <view class="edit-cancel" catchtap="onCancelEdit">取消</view>
+        <view class="edit-save {{savingEdit ? 'action-loading' : ''}}" catchtap="onSaveEdit">{{savingEdit ? "保存中" : "保存修改"}}</view>
+      </view>
+    </view>
+  </view>
+</view>

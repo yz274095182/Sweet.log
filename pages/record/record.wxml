@@ -1,0 +1,112 @@
+<view class="record-page" bindtap="onPageTap">
+  <view class="hero">
+    <view class="tag-pill" catchtap="onToggleTagPicker">
+      <image class="lucide-icon tag-icon pill-icon" src="{{selectedTagIconPath}}" mode="aspectFit" />
+      <text>{{selectedTagLabel}}</text>
+      <text class="pill-arrow">{{showTagPicker ? "收起" : "更改"}}</text>
+    </view>
+
+    <view wx:if="{{showTagPicker}}" class="tag-picker-panel" catchtap="onTagPickerTap">
+      <view
+        wx:for="{{visibleTags}}"
+        wx:key="key"
+        class="tag-picker-item {{item.active ? 'tag-picker-item-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSelectTag"
+      >
+        <image class="lucide-icon tag-icon tag-picker-icon" src="{{item.displayIconPath}}" mode="aspectFit" />
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="hero-meta">
+      <view class="meta-item">
+        <image class="lucide-icon meta-icon" src="/assets/lucide/png/clock-muted.png" mode="aspectFit" />
+        <text>{{dateText}}</text>
+      </view>
+      <view class="meta-divider"></view>
+      <view class="meta-item target-text">{{thresholdText}}</view>
+    </view>
+
+    <image class="hero-family-image {{isPregnant ? 'hero-family-pregnant' : 'hero-family-cat'}}" src="{{heroImagePath}}" mode="aspectFit" />
+  </view>
+
+  <view class="main-card">
+    <view class="card-title-row">
+      <view class="card-title">
+        <text>血糖值</text>
+        <text class="title-unit">（mmol/L）</text>
+      </view>
+    </view>
+
+    <view class="value-block status-{{status}}">
+      <input
+        class="glucose-input"
+        type="digit"
+        value="{{value}}"
+        placeholder="5.8"
+        maxlength="4"
+        bindinput="onValueInput"
+      />
+      <text class="value-unit">mmol/L</text>
+    </view>
+
+    <view class="adjust-row">
+      <view class="adjust-chip" data-delta="-0.1" bindtap="onAdjustValue">-0.1</view>
+      <view class="adjust-chip adjust-chip-active" bindtap="onUseQuickValue">{{quickValueText}}</view>
+      <view class="adjust-chip" data-delta="0.1" bindtap="onAdjustValue">+0.1</view>
+    </view>
+
+    <view class="card-divider"></view>
+
+    <view class="section-title">
+      <text>记录时间</text>
+      <image class="lucide-icon section-icon" src="/assets/lucide/png/clock-muted.png" mode="aspectFit" />
+    </view>
+
+    <picker
+      mode="multiSelector"
+      range="{{datetimeColumns}}"
+      value="{{datetimeValue}}"
+      bindcolumnchange="onDatetimeColumnChange"
+      bindchange="onDatetimeChange"
+    >
+      <view class="datetime-select">
+        <view class="datetime-select-left">
+          <image class="lucide-icon datetime-select-icon" src="/assets/lucide/png/calendar-days-green.png" mode="aspectFit" />
+          <view class="datetime-select-value">{{datetimeText}}</view>
+        </view>
+        <image class="lucide-icon datetime-select-arrow" src="/assets/lucide/png/chevron-right-muted.png" mode="aspectFit" />
+      </view>
+    </picker>
+
+    <view class="section-title note-title">
+      <text>备注</text>
+      <text class="section-muted">（选填）</text>
+    </view>
+
+    <view class="note-box">
+      <textarea
+        class="note-input"
+        value="{{note}}"
+        placeholder="备注：餐食、散步、复测..."
+        maxlength="200"
+        bindinput="onNoteInput"
+      />
+      <view class="note-count">{{noteCount}}/200</view>
+    </view>
+  </view>
+
+  <view class="last-record" bindtap="goHistory">
+    <image class="lucide-icon last-icon" src="/assets/lucide/png/notebook-text-green.png" mode="aspectFit" />
+    <view class="last-text">{{previousRecordText}}</view>
+    <image class="lucide-icon last-arrow" src="/assets/lucide/png/chevron-right-muted.png" mode="aspectFit" />
+  </view>
+
+  <view class="save-action status-button-{{status}} {{saving ? 'action-loading' : ''}}" bindtap="onSave">
+    <view class="save-check">
+      <image class="lucide-icon save-check-icon" src="/assets/lucide/png/circle-check-green.png" mode="aspectFit" />
+    </view>
+    <text>{{saving ? "保存中..." : saveButtonText}}</text>
+  </view>
+</view>

@@ -1,0 +1,31 @@
+<view class="tools-page">
+  <view class="tools-header">
+    <view class="tools-title-row">
+      <view>
+        <view class="tools-title">日常工具</view>
+        <view class="tools-subtitle">控糖参考和记录辅助。</view>
+      </view>
+      <view class="tools-badge">1 个</view>
+    </view>
+  </view>
+
+  <view class="tool-card" bindtap="goFood">
+    <view class="tool-icon">
+      <image class="tool-icon-image" src="/assets/lucide/png/soup-green.png" mode="aspectFit" />
+    </view>
+    <view class="tool-content">
+      <view class="tool-title">食物</view>
+      <view class="tool-desc">查看控糖饮食参考，随机来一份日常食谱。</view>
+      <view class="tool-tags">
+        <text>食物清单</text>
+        <text>随机食谱</text>
+        <text>日常参考</text>
+      </view>
+    </view>
+    <image class="tool-arrow" src="/assets/lucide/png/chevron-right-green.png" mode="aspectFit" />
+  </view>
+
+  <view class="tools-notice">
+    饮食建议仅供记录和日常参考，不能替代医生或营养师建议。
+  </view>
+</view>

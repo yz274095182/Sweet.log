@@ -1,0 +1,101 @@
+<view class="food-page">
+  <view class="food-hero">
+    <view class="food-kicker">控糖饮食参考</view>
+    <view class="food-title">食物</view>
+    <view class="food-subtitle">记录常见食物的控糖友好程度，随机搭配一份日常食谱。</view>
+  </view>
+
+  <view class="notice-card">
+    以下内容仅供饮食记录和日常参考，不能替代医生或营养师建议；如有孕期、用药或其他特殊情况，请以专业建议为准。
+  </view>
+
+  <view class="section-head">
+    <view>
+      <view class="section-title">食物清单</view>
+      <view class="section-desc">避免绝对判断，更多关注份量、搭配和记录反馈。</view>
+    </view>
+    <view class="food-count">{{filteredFoods.length}} 项</view>
+  </view>
+
+  <scroll-view class="category-scroll" scroll-x enable-flex>
+    <view class="category-row">
+      <view
+        wx:for="{{categories}}"
+        wx:key="key"
+        class="category-chip {{item.active ? 'category-chip-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSelectCategory"
+      >
+        {{item.label}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="food-list">
+    <view wx:for="{{filteredFoods}}" wx:key="id" class="food-card friendliness-{{item.friendlinessKey}}">
+      <view class="food-card-head">
+        <view>
+          <view class="food-name">{{item.name}}</view>
+          <view class="food-meta">{{item.categoryLabel}} · {{item.giText}}</view>
+        </view>
+        <view class="friendliness-badge friendliness-badge-{{item.friendlinessKey}}">{{item.friendliness}}</view>
+      </view>
+      <view class="portion-row">
+        <text class="portion-label">建议份量</text>
+        <text class="portion-value">{{item.portion}}</text>
+      </view>
+      <view class="food-desc">{{item.description}}</view>
+      <view class="food-tip">提醒：{{item.tips}}</view>
+    </view>
+  </view>
+
+  <view class="recipe-card">
+    <view class="section-title">随机食谱</view>
+    <view class="section-desc">选择餐次后，随机给出一份本地食谱。</view>
+
+    <scroll-view class="meal-scroll" scroll-x enable-flex>
+      <view class="meal-row">
+        <view
+          wx:for="{{mealTypes}}"
+          wx:key="key"
+          class="meal-chip {{item.active ? 'meal-chip-active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="onSelectMealType"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{selectedRecipe}}" class="recipe-result">
+      <view class="recipe-title">{{selectedRecipe.title}}</view>
+      <view class="recipe-meal">{{selectedRecipe.mealLabel}}</view>
+      <view class="recipe-foods">
+        <text wx:for="{{selectedRecipe.foods}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="recipe-line">
+        <text class="recipe-label">份量</text>
+        <text>{{selectedRecipe.portion}}</text>
+      </view>
+      <view class="recipe-line">
+        <text class="recipe-label">做法</text>
+        <text>{{selectedRecipe.steps}}</text>
+      </view>
+      <view class="recipe-tip">提醒：{{selectedRecipe.tips}}</view>
+    </view>
+
+    <view wx:else class="recipe-empty">
+      还没有抽取食谱，先选一个餐次吧。
+    </view>
+
+    <view class="recipe-action" bindtap="onRandomRecipe">
+      {{selectedRecipe ? "再来一份" : "随机来一份控糖食谱"}}
+    </view>
+  </view>
+
+  <view class="ai-card">
+    <view class="ai-title">AI 饮食问答</view>
+    <view class="ai-desc">后续可用于询问食材搭配、食谱记录和日常控糖提醒。</view>
+    <view class="ai-state">敬请期待</view>
+  </view>
+</view>
